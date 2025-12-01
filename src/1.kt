@@ -19,7 +19,7 @@ fun main() {
     println()
 }
 
-fun solve1(input: List<String>) {
+private fun solve1(input: List<String>) {
     val answer = input.map { it[0] to it.substring(1).toInt() }
         .runningFold(50) { prev, (direction, steps) ->
             ((if (direction == 'L') prev - steps else prev + steps) + 100) % 100
@@ -30,7 +30,7 @@ fun solve1(input: List<String>) {
     println(answer)
 }
 
-fun solve2(input: List<String>) {
+private fun solve2(input: List<String>) {
     val answer = input.map { it[0] to it.substring(1).toInt() }
         .fold(0 to 50) { (counter, prev), (direction, steps) ->
             val (counterInThisLoop, current) = (0..<steps).fold(0 to prev) { (tmpCounter, current), _ ->
