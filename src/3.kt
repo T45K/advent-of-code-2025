@@ -20,7 +20,31 @@ fun main() {
 }
 
 private fun solve1(input: List<String>) {
+    val answer = input.sumOf { line ->
+        val numbers = line.map { it.digitToInt() }
+        (0..<numbers.size - 1).flatMap { i ->
+            (i + 1..<numbers.size).map { j ->
+                numbers[i] * 10 + numbers[j]
+            }
+        }.max()
+    }
+
+    println(answer)
 }
 
 private fun solve2(input: List<String>) {
+    val answer = input.sumOf { line ->
+        val numbers = line.map { it.digitToInt() }
+        generateSequence(numbers) { tmp ->
+            val index = (0..<12).firstOrNull {
+                tmp[it] < tmp[it + 1]
+            } ?: 12
+            tmp.subList(0, index) + tmp.subList(index + 1, tmp.size)
+        }
+            .dropWhile { it.size > 12 }
+            .first()
+            .joinToString("")
+            .toLong()
+    }
+    println(answer)
 }
