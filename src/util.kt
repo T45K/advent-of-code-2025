@@ -60,6 +60,8 @@ class UnionFindTree(numOfNodes: Int) {
         val rootB = getRoot(nodeB)
         nodes[max(rootA, rootB)] = min(rootA, rootB)
     }
+
+    fun allRoots(): List<Int> = nodes.indices.map { getRoot(it) }
 }
 
 fun <T> Iterable<T>.isUnique(): Boolean = distinct().size == 1

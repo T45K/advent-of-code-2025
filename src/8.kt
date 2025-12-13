@@ -19,34 +19,51 @@ fun main() {
     println()
 }
 
-private fun solve1(input: List<String>) {
-    val positions = input.map {
-        val (x, y, z) = it.split(",")
-        Triple(x.toLong(), y.toLong(), z.toLong())
+private data class Point3(val x: Long, val y: Long, val z: Long) {
+    fun sqDistanceTo(other: Point3): Long {
+        val dx = x - other.x
+        val dy = y - other.y
+        val dz = z - other.z
+        return dx * dx + dy * dy + dz * dz
+    }
+}
+
+private data class Edge(val from: Int, val to: Int, val sqDistance: Long)
+
+private fun parsePositions(input: List<String>): List<Point3> =
+    input.map { line ->
+        val (x, y, z) = line.split(",")
+        Point3(x.toLong(), y.toLong(), z.toLong())
     }
 
-    val numOfNodes = input.size
-    val pairs = positions.asSequence().flatMapIndexed { index1, position1 ->
-        val pair1 = index1 to position1
-        positions.subList(index1 + 1, positions.size).mapIndexed { index2, position2 ->
-            val pair2 = index2 + index1 + 1 to position2
-            pair1 to pair2
+private fun edgesSortedByDistance(positions: List<Point3>): List<Edge> =
+    sequence {
+        for (i in positions.indices) {
+            val p1 = positions[i]
+            for (j in i + 1..positions.lastIndex) {
+                val edge = Edge(i, j, p1.sqDistanceTo(positions[j]))
+                yield(edge)
+            }
         }
-    }.map { (pair1, pair2) ->
-        val (index1, position1) = pair1
-        val (index2, position2) = pair2
-        Triple(index1, index2, sqDistance(position1, position2))
-    }.sortedBy { (_, _, distance) -> distance }
-        .take(numOfNodes)
-        .map { (index1, index2, _) -> index1 to index2 }.toList()
+    }.sortedBy { it.sqDistance }
+        .toList()
 
-    val unionFindTree = UnionFindTree(numOfNodes)
-    pairs.forEach { (index1, index2) -> unionFindTree.unit(index1, index2) }
-
-    val answer = (0..<numOfNodes).map { unionFindTree.getRoot(it) }
+private fun componentSizes(unionFindTree: UnionFindTree, numOfNodes: Int): List<Int> =
+    unionFindTree.allRoots()
         .groupingBy { it }
         .eachCount()
-        .map { it.value }
+        .values
+        .toList()
+
+private fun solve1(input: List<String>) {
+    val positions = parsePositions(input)
+    val numOfNodes = positions.size
+    val edges = edgesSortedByDistance(positions).take(numOfNodes)
+
+    val unionFindTree = UnionFindTree(numOfNodes)
+    edges.forEach { (from, to, _) -> unionFindTree.unit(from, to) }
+
+    val answer = componentSizes(unionFindTree, numOfNodes)
         .asSequence()
         .sortedDescending()
         .take(3)
@@ -54,38 +71,16 @@ private fun solve1(input: List<String>) {
     println(answer)
 }
 
-private fun sqDistance(p1: Triple<Long, Long, Long>, p2: Triple<Long, Long, Long>): Long =
-    sqDistance(p1.first - p2.first, p1.second - p2.second, p1.third - p2.third)
-
-private fun sqDistance(x: Long, y: Long, z: Long): Long =
-    x * x + y * y + z * z
-
 private fun solve2(input: List<String>) {
-    val positions = input.map {
-        val (x, y, z) = it.split(",")
-        Triple(x.toLong(), y.toLong(), z.toLong())
-    }
-
-    val pairs = positions.asSequence().flatMapIndexed { index1, position1 ->
-        val pair1 = index1 to position1
-        positions.subList(index1 + 1, positions.size).mapIndexed { index2, position2 ->
-            val pair2 = index2 + index1 + 1 to position2
-            pair1 to pair2
-        }
-    }.map { (pair1, pair2) ->
-        val (index1, position1) = pair1
-        val (index2, position2) = pair2
-        Triple(index1, index2, sqDistance(position1, position2))
-    }.sortedBy { (_, _, distance) -> distance }
-        .map { (index1, index2, _) -> index1 to index2 }.toList()
-
-    val numOfNodes = input.size
+    val positions = parsePositions(input)
+    val numOfNodes = positions.size
+    val edges = edgesSortedByDistance(positions)
     val unionFindTree = UnionFindTree(numOfNodes)
 
-    val (index1, index2) = pairs.asSequence()
-        .onEach { (index1, index2) -> unionFindTree.unit(index1, index2) }
-        .first { _ -> (0..<numOfNodes).map { unionFindTree.getRoot(it) }.isUnique() }
+    val (index1, index2) = edges.asSequence()
+        .onEach { (from, to, _) -> unionFindTree.unit(from, to) }
+        .first { _ -> unionFindTree.allRoots().isUnique() }
 
-    val answer = positions[index1].first * positions[index2].first
+    val answer = positions[index1].x * positions[index2].x
     println(answer)
 }
